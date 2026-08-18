@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}التقارير{% endblock %}
+{% block page_title %}التقارير الشاملة{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <form class="row g-2" method="GET">
+            <input type="hidden" name="tab" value="{{ tab }}">
+            <div class="col-md-2">
+                <label class="form-label">من</label>
+                <input type="date" class="form-control" name="start" value="{{ start }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">إلى</label>
+                <input type="date" class="form-control" name="end" value="{{ end }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">التصنيف</label>
+                <select class="form-select" name="category" onchange="this.form.submit()">
+                    <option value="">الكل</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> عرض</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- بطاقات الملخص المالي -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card bg-primary text-white text-center stat-card"><div class="card-body"><h6>💰 المبيعات</h6><h4>{{ "%.0f"|format(total_sales) }}</h4></div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-warning text-dark text-center stat-card"><div class="card-body"><h6>📦 تكلفة البضاعة</h6><h4>{{ "%.0f"|format(total_cost) }}</h4></div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-success text-white text-center stat-card"><div class="card-body"><h6>📈 صافي الربح</h6><h4>{{ "%.0f"|format(total_profit) }}</h4></div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-info text-white text-center stat-card"><div class="card-body"><h6>🚚 المشتريات</h6><h4>{{ "%.0f"|format(total_purchases) }}</h4></div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary text-white text-center stat-card"><div class="card-body"><h6>💵 مدفوعات العملاء</h6><h4>{{ "%.0f"|format(total_cust_payments) }}</h4></div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-danger text-white text-center stat-card"><div class="card-body"><h6>🏦 مدفوعات موردين</h6><h4>{{ "%.0f"|format(total_supp_payments) }}</h4></div></div>
+    </div>
+</div>
+
+<!-- التبويبات -->
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link {{ 'active' if tab=='summary' }}" href="?start={{ start }}&end={{ end }}&category={{ category }}&tab=summary">📋 ملخص</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if tab=='sales' }}" href="?start={{ start }}&end={{ end }}&category={{ category }}&tab=sales">🛒 تفاصيل المبيعات</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if tab=='products' }}" href="?start={{ start }}&end={{ end }}&category={{ category }}&tab=products">📊 المنتجات</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if tab=='payments' }}" href="?start={{ start }}&end={{ end }}&category={{ category }}&tab=payments">💳 المدفوعات</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if tab=='balances' }}" href="?start={{ start }}&end={{ end }}&category={{ category }}&tab=balances">⚖️ الأرصدة</a></li>
+</ul>
+
+<!-- محتوى التبويب -->
+{% if tab == 'summary' %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5>ملخص الفترة ({{ start }} → {{ end }}) {% if category %} - تصنيف: {{ category }}{% endif %}</h5>
+                <table class="table table-bordered">
+                    <tr><th>المبيعات</th><td class="amount-text">{{ "%.2f"|format(total_sales) }}</td></tr>
+                    <tr><th>تكلفة البضاعة المباعة</th><td class="amount-text text-danger">{{ "%.2f"|format(total_cost) }}</td></tr>
+                    <tr class="table-success"><th>صافي الربح</th><td class="amount-text fw-bold">{{ "%.2f"|format(total_profit) }}</td></tr>
+                    <tr><th>المشتريات (مخزون)</th><td class="amount-text">{{ "%.2f"|format(total_purchases) }}</td></tr>
+                    <tr><th>مدفوعات العملاء</th><td class="amount-text text-success">{{ "%.2f"|format(total_cust_payments) }}</td></tr>
+                    <tr><th>مدفوعات للموردين</th><td class="amount-text">{{ "%.2f"|format(total_supp_payments) }}</td></tr>
+                    <tr><th>مديونيات للموردين</th><td class="amount-text text-warning">{{ "%.2f"|format(total_supp_debts) }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif tab == 'sales' %}
+<div class="table-container">
+    <table class="table table-hover">
+        <thead><tr><th># فاتورة</th><th>التاريخ</th><th>العميل</th><th>المنتج</th><th>الكمية</th><th>سعر البيع</th><th>التكلفة</th><th>الإجمالي</th></tr></thead>
+        <tbody>
+            {% for item in sales_details %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.invoice_date.strftime('%Y-%m-%d') if item.invoice_date else '' }}</td>
+                <td>{{ item.customer_name or 'نقدي' }}</td>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td class="amount-text">{{ "%.2f"|format(item.total_price / item.quantity) if item.quantity else '0.00' }}</td>
+                <td class="amount-text">{{ "%.2f"|format(item.purchase_price) }}</td>
+                <td class="amount-text">{{ "%.2f"|format(item.total_price) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif tab == 'products' %}
+<div class="table-container">
+    <table class="table table-hover">
+        <thead><tr><th>المنتج</th><th>التصنيف</th><th>الكمية المباعة</th><th>الإجمالي</th></tr></thead>
+        <tbody>
+            {% for p in product_stats %}
+            <tr>
+                <td>{{ p.product_name }}</td>
+                <td>{{ p.category }}</td>
+                <td>{{ p.qty }}</td>
+                <td class="amount-text">{{ "%.2f"|format(p.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif tab == 'payments' %}
+<div class="table-container">
+    <table class="table table-hover">
+        <thead><tr><th>#</th><th>التاريخ</th><th>النوع</th><th>الطرف</th><th>المبلغ</th></tr></thead>
+        <tbody>
+            {% for p in payments %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.payment_date.strftime('%Y-%m-%d') if p.payment_date else '' }}</td>
+                <td>
+                    {% if p.type == 'customer_payment' %}<span class="badge bg-success">من عميل</span>
+                    {% elif p.type == 'supplier_payment' %}<span class="badge bg-info">إلى مورد</span>
+                    {% else %}<span class="badge bg-warning">مديونية مورد</span>{% endif %}
+                </td>
+                <td>{{ p.party_id }}</td>
+                <td class="amount-text">{{ "%.2f"|format(p.amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif tab == 'balances' %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card stat-card"><div class="card-body"><h5>العملاء (الرصيد)</h5><h3 class="amount-text">{{ "%.2f"|format(total_cust_balance) }}</h3></div></div>
+    </div>
+    <div class="col-md-6">
+        <div class="card stat-card"><div class="card-body"><h5>الموردون (الرصيد)</h5><h3 class="amount-text">{{ "%.2f"|format(total_supp_balance) }}</h3></div></div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

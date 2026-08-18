@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}الخزينة والمصروفات{% endblock %}
+{% block header %}الخزينة والمصروفات{% endblock %}
+
+{% block content %}
+<!-- بطاقة رصيد الخزينة -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-wallet"></i> رصيد الخزينة الحالي</h5>
+                <h2 class="card-text">{{ balance }} ج.م</h2>
+                <small>آخر تحديث: {{ now.strftime('%Y-%m-%d %H:%M') if now else 'غير محدد' }}</small>
+                <!-- ✅ التعديل هنا: استخدمت now بدلاً من datetime.now() -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 d-flex align-items-center gap-2">
+        <a href="{{ url_for('cash.add_expense') }}" class="btn btn-danger btn-lg"><i class="fas fa-minus-circle"></i> إضافة مصروف</a>
+        <a href="{{ url_for('cash.daily_close') }}" class="btn btn-success btn-lg"><i class="fas fa-file-invoice"></i> تقفيل اليومية</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-history"></i> آخر حركات الخزينة
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr><th>النوع</th><th>المبلغ</th><th>السبب</th><th>التاريخ</th></tr>
+                    </thead>
+                    <tbody>
+                        {% if transactions %}
+                            {% for t in transactions %}
+                            <tr>
+                                <td>
+                                    <span class="badge {% if t.transaction_type == 'IN' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ 'وارد' if t.transaction_type == 'IN' else 'صادر' }}
+                                    </span>
+                                </td>
+                                <td>{{ t.amount }} ج.م</td>
+                                <td>{{ t.reason }}</td>
+                                <td>{{ t.created_at.strftime('%H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="4" class="text-muted">لا توجد حركات</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-receipt"></i> آخر المصروفات
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr><th>الفئة</th><th>المبلغ</th><th>ملاحظات</th><th>التاريخ</th></tr>
+                    </thead>
+                    <tbody>
+                        {% if expenses %}
+                            {% for exp in expenses %}
+                            <tr>
+                                <td><span class="badge bg-secondary">{{ exp.category }}</span></td>
+                                <td>{{ exp.amount }} ج.م</td>
+                                <td>{{ exp.notes or '-' }}</td>
+                                <td>{{ exp.created_at.strftime('%H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="4" class="text-muted">لا توجد مصروفات</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

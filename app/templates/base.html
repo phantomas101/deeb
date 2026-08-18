@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare https://fonts.googleapis.com;">
+    
+    <title>{{ settings.get('site_name', 'نظام POS المتكامل') }} - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family={{ settings.get('font_family', 'Cairo') }}:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        :root {
+            --primary-color: {{ settings.get('primary_color', '#0f172a') }};
+            --secondary-color: {{ settings.get('secondary_color', '#fbbf24') }};
+            --font-family: '{{ settings.get('font_family', 'Cairo') }}', 'Segoe UI', Tahoma, sans-serif;
+            {% if settings.get('background_path') %}
+                --background-image: url('{{ url_for('static', filename=settings.get('background_path')) }}');
+            {% else %}
+                --background-image: none;
+            {% endif %}
+        }
+
+        * { font-family: var(--font-family) !important; }
+
+        body {
+            background-image: var(--background-image);
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            background-blend-mode: overlay;
+            background-color: rgba(255, 255, 255, 0.5);
+            margin: 0; padding: 0; min-height: 100vh;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(3px);
+            min-height: 100vh;
+            padding-bottom: 30px;
+        }
+
+        header, .card {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar {
+            background-color: var(--primary-color) !important;
+            width: 260px;
+            position: fixed;
+            height: 100vh;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar .logo {
+            padding: 20px 25px 15px;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+        .sidebar .logo img {
+            max-height: 35px;
+            width: auto;
+            border-radius: 6px;
+        }
+        .sidebar .logo i { font-size: 24px; color: var(--secondary-color); }
+        .sidebar .logo span { color: #fff; }
+
+        .sidebar nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        /* ===== مجموعات القائمة ===== */
+        .nav-group {
+            margin-bottom: 5px;
+        }
+        .nav-group .group-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 20px;
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: 0.3s;
+            gap: 8px;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: right;
+        }
+        .nav-group .group-header:hover {
+            color: #fff;
+        }
+        .nav-group .group-header .arrow {
+            margin-right: auto;
+            transition: transform 0.3s;
+            font-size: 12px;
+        }
+        .nav-group .group-header .arrow.collapsed {
+            transform: rotate(-90deg);
+        }
+        .nav-group .group-items {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .nav-group .group-items .nav-item {
+            padding-right: 35px;
+        }
+
+        .sidebar nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px 10px 15px;
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: 0.3s;
+            border-right: 3px solid transparent;
+            font-size: 14px;
+        }
+        .sidebar nav a i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            border-right-color: var(--secondary-color);
+        }
+
+        .user-info {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #94a3b8;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .user-info .username {
+            color: #fff;
+            font-weight: 600;
+        }
+        .user-info .role {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .main-content {
+            margin-right: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #fff;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            flex-wrap: wrap;
+        }
+        header h1 { font-size: 22px; margin: 0; color: #0f172a; }
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .header-actions #clock { font-size: 14px; color: #64748b; }
+
+        .content-body { padding: 25px; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .sidebar .logo span,
+            .sidebar .nav-group .group-header span,
+            .sidebar .nav-group .group-header .arrow,
+            .sidebar nav a span,
+            .user-info .username,
+            .user-info .role {
+                display: none;
+            }
+            .sidebar .logo { padding: 15px; justify-content: center; }
+            .sidebar .logo img { max-height: 30px; }
+            .sidebar .logo i { font-size: 20px; }
+            .sidebar nav a { padding: 12px; justify-content: center; }
+            .sidebar nav a i { font-size: 18px; width: auto; }
+            .sidebar .nav-group .group-header { padding: 8px 12px; justify-content: center; }
+            .sidebar .nav-group .group-header i { font-size: 16px; }
+            .sidebar .nav-group .group-items .nav-item { padding-right: 0; }
+            .main-content { margin-right: 70px; }
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                {% if settings.get('logo_path') %}
+                    <img src="{{ url_for('static', filename=settings.get('logo_path')) }}" alt="شعار المنشأة">
+                {% else %}
+                    <i class="fas fa-store"></i>
+                {% endif %}
+                <span>{{ settings.get('site_name', 'نظام نقاط البيع') }}</span>
+            </div>
+            <nav>
+                <!-- ===== المجموعة 1: العمليات اليومية ===== -->
+                <div class="nav-group">
+                    <button class="group-header" data-target="#group-daily">
+                        <i class="fas fa-bolt"></i>
+                        <span>العمليات اليومية</span>
+                        <i class="fas fa-chevron-left arrow"></i>
+                    </button>
+                    <div class="group-items" id="group-daily">
+                        <a href="{{ url_for('pos.index') }}" class="nav-item {% if request.endpoint == 'pos.index' %}active{% endif %}">
+                            <i class="fas fa-cash-register"></i> <span>نقاط البيع</span>
+                        </a>
+                        <a href="{{ url_for('inventory.index') }}" class="nav-item {% if request.endpoint == 'inventory.index' or request.endpoint == 'inventory.edit_product' %}active{% endif %}">
+                            <i class="fas fa-boxes"></i> <span>المخزون</span>
+                        </a>
+                        <a href="{{ url_for('sales.index') }}" class="nav-item {% if request.endpoint == 'sales.index' or request.endpoint == 'sales.details' %}active{% endif %}">
+                            <i class="fas fa-receipt"></i> <span>المبيعات</span>
+                        </a>
+                        <a href="{{ url_for('purchases.index') }}" class="nav-item {% if request.endpoint == 'purchases.index' or request.endpoint == 'purchases.add_purchase' or request.endpoint == 'purchases.details' %}active{% endif %}">
+                            <i class="fas fa-truck"></i> <span>المشتريات</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ===== المجموعة 2: إدارة العلاقات ===== -->
+                <div class="nav-group">
+                    <button class="group-header" data-target="#group-relations">
+                        <i class="fas fa-handshake"></i>
+                        <span>إدارة العلاقات</span>
+                        <i class="fas fa-chevron-left arrow"></i>
+                    </button>
+                    <div class="group-items" id="group-relations">
+                        <a href="{{ url_for('customers.index') }}" class="nav-item {% if request.endpoint == 'customers.index' or request.endpoint == 'customers.add_customer_page' or request.endpoint == 'customers.edit_customer_page' %}active{% endif %}">
+                            <i class="fas fa-user-friends"></i> <span>العملاء</span>
+                        </a>
+                        <a href="{{ url_for('suppliers.index') }}" class="nav-item {% if request.endpoint == 'suppliers.index' or request.endpoint == 'suppliers.add_supplier_page' or request.endpoint == 'suppliers.edit_supplier_page' %}active{% endif %}">
+                            <i class="fas fa-handshake"></i> <span>الموردين</span>
+                        </a>
+                        <a href="{{ url_for('debts.index') }}" class="nav-item {% if request.endpoint == 'debts.index' %}active{% endif %}">
+                            <i class="fas fa-file-invoice"></i> <span>المديونية</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ===== المجموعة 3: العمليات المتقدمة ===== -->
+                <div class="nav-group">
+                    <button class="group-header" data-target="#group-advanced">
+                        <i class="fas fa-cogs"></i>
+                        <span>العمليات المتقدمة</span>
+                        <i class="fas fa-chevron-left arrow"></i>
+                    </button>
+                    <div class="group-items" id="group-advanced">
+                        <a href="{{ url_for('transfers.index') }}" class="nav-item {% if request.endpoint == 'transfers.index' or request.endpoint == 'transfers.add_transfer' %}active{% endif %}">
+                            <i class="fas fa-exchange-alt"></i> <span>التحويلات المخزنية</span>
+                        </a>
+                        <!-- 🔥 رابط استلام تحويل وارد (جديد) -->
+                        <a href="{{ url_for('transfers.receive_incoming_transfer') }}" class="nav-item {% if request.endpoint == 'transfers.receive_incoming_transfer' %}active{% endif %}">
+                            <i class="fas fa-arrow-down"></i> <span>استلام تحويل وارد</span>
+                        </a>
+                        <a href="{{ url_for('branches.index') }}" class="nav-item {% if request.endpoint == 'branches.index' %}active{% endif %}">
+                            <i class="fas fa-store"></i> <span>الفروع</span>
+                        </a>
+                        <a href="{{ url_for('cash.index') }}" class="nav-item {% if request.endpoint == 'cash.index' or request.endpoint == 'cash.add_expense' or request.endpoint == 'cash.daily_close' %}active{% endif %}">
+                            <i class="fas fa-coins"></i> <span>الخزينة والمصروفات</span>
+                        </a>
+                        <!-- ===== تم حذف رابط "الضمان" ===== -->
+                        <a href="{{ url_for('profit_loss.index') }}" class="nav-item {% if request.endpoint == 'profit_loss.index' %}active{% endif %}">
+                            <i class="fas fa-chart-line"></i> <span>الأرباح والخسائر</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ===== المجموعة 4: إدارة النظام ===== -->
+                <div class="nav-group">
+                    <button class="group-header" data-target="#group-system">
+                        <i class="fas fa-cog"></i>
+                        <span>إدارة النظام</span>
+                        <i class="fas fa-chevron-left arrow"></i>
+                    </button>
+                    <div class="group-items" id="group-system">
+                        <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                            <i class="fas fa-chart-pie"></i> <span>لوحة التحكم</span>
+                        </a>
+                        <a href="{{ url_for('users.index') }}" class="nav-item {% if request.endpoint == 'users.index' %}active{% endif %}">
+                            <i class="fas fa-users"></i> <span>المستخدمين</span>
+                        </a>
+                        <a href="{{ url_for('settings.index') }}" class="nav-item {% if request.endpoint == 'settings.index' %}active{% endif %}">
+                            <i class="fas fa-cog"></i> <span>الإعدادات</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            <div class="user-info">
+                <div class="username">{{ current_user.username }}</div>
+                <div class="role">{% if current_user.role == 'admin' %}أدمن{% else %}كاشير{% endif %}</div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>{% block header %}{{ settings.get('site_name', 'لوحة التحكم') }}{% endblock %}</h1>
+                <div class="header-actions">
+                    <span id="clock"></span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-sign-out-alt"></i> خروج
+                    </a>
+                </div>
+            </header>
+            <section class="content-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // استعادة حالة مجموعات القائمة من LocalStorage
+            const groupHeaders = document.querySelectorAll('.group-header');
+            
+            groupHeaders.forEach(header => {
+                const targetId = header.dataset.target;
+                const items = document.querySelector(targetId);
+                const arrow = header.querySelector('.arrow');
+                
+                const isOpen = localStorage.getItem('nav-' + targetId) !== 'closed';
+                if (isOpen) {
+                    items.style.maxHeight = items.scrollHeight + 'px';
+                    if (arrow) arrow.classList.remove('collapsed');
+                } else {
+                    items.style.maxHeight = '0px';
+                    if (arrow) arrow.classList.add('collapsed');
+                }
+                
+                header.addEventListener('click', function() {
+                    const target = document.querySelector(targetId);
+                    const arrowIcon = this.querySelector('.arrow');
+                    
+                    if (target.style.maxHeight === '0px' || target.style.maxHeight === '') {
+                        target.style.maxHeight = target.scrollHeight + 'px';
+                        if (arrowIcon) arrowIcon.classList.remove('collapsed');
+                        localStorage.setItem('nav-' + targetId, 'open');
+                    } else {
+                        target.style.maxHeight = '0px';
+                        if (arrowIcon) arrowIcon.classList.add('collapsed');
+                        localStorage.setItem('nav-' + targetId, 'closed');
+                    }
+                });
+            });
+            
+            // تحديث الساعة
+            function updateClock() {
+                const now = new Date();
+                document.getElementById('clock').textContent = now.toLocaleTimeString('ar-EG');
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

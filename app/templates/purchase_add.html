@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة فاتورة شراء{% endblock %}
+{% block header %}إضافة فاتورة شراء جديدة{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-file-invoice"></i> بيانات الفاتورة</span>
+        <span class="badge bg-light text-dark" id="invoiceNumber">PO-{{ now.strftime('%Y%m%d%H%M%S') }}</span>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="purchaseForm">
+            <!-- ===== رأس الفاتورة (المورد + نوع الدفع) ===== -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">
+                        المورد 
+                        <span class="text-muted small" id="supplierRequiredHint">(مطلوب للآجل)</span>
+                    </label>
+                    <select name="supplier_phone" class="form-select" id="supplierSelect">
+                        <option value="">-- اختر مورد --</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.phone }}">{{ supplier.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted" id="supplierHelp">يمكنك ترك المورد فارغاً في الدفع النقدي</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">نوع الدفع <span class="text-danger">*</span></label>
+                    <select name="payment_type" class="form-select" id="paymentType" required>
+                        <option value="cash">نقدي</option>
+                        <option value="credit">آجل</option>
+                    </select>
+                    <small class="text-muted" id="paymentHelp">اختيار "آجل" سيضيف المبلغ لرصيد المورد</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">رقم الفاتورة</label>
+                    <input type="text" class="form-control" value="تلقائي" disabled>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- ===== جدول المنتجات ===== -->
+            <h5><i class="fas fa-boxes"></i> المنتجات المشتراة</h5>
+            <div id="productsContainer">
+                <div class="row product-row g-2 mb-2">
+                    <div class="col-md-5">
+                        <label class="form-label">المنتج <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control product-search" 
+                               placeholder="اكتب اسم المنتج (سيظهر اقتراحات)" 
+                               autocomplete="off" required>
+                        <input type="hidden" name="product_id[]" class="product-id-input" value="">
+                        <div class="search-results" style="position: relative;"></div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">الكمية</label>
+                        <input type="number" name="quantity[]" class="form-control" min="1" value="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">سعر التكلفة</label>
+                        <input type="number" step="0.01" name="cost_price[]" class="form-control cost-input" placeholder="0.00" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger remove-product-btn"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="addProductBtn" class="btn btn-outline-primary btn-sm mt-2">
+                <i class="fas fa-plus"></i> إضافة منتج آخر
+            </button>
+
+            <hr>
+
+            <!-- ===== أزرار الإجراءات ===== -->
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-success btn-lg">حفظ فاتورة الشراء</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 0 0 8px 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .search-results .result-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .search-results .result-item:hover {
+        background: #f0f8ff;
+    }
+    .search-results .result-item .add-new {
+        color: #28a745;
+        font-weight: bold;
+    }
+    .product-row {
+        position: relative;
+    }
+</style>
+
+<script>
+    let searchTimeout = null;
+
+    // ============================================================
+    // التحكم في إلزامية المورد حسب نوع الدفع
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentType = document.getElementById('paymentType');
+        const supplierSelect = document.getElementById('supplierSelect');
+        const supplierHelp = document.getElementById('supplierHelp');
+        const supplierRequiredHint = document.getElementById('supplierRequiredHint');
+
+        function updateSupplierRequirement() {
+            if (paymentType.value === 'credit') {
+                supplierSelect.required = true;
+                supplierRequiredHint.textContent = '(مطلوب للآجل)';
+                supplierRequiredHint.style.color = '#dc3545';
+                supplierHelp.textContent = 'المورد مطلوب للدفع الآجل';
+                supplierHelp.style.color = '#dc3545';
+            } else {
+                supplierSelect.required = false;
+                supplierRequiredHint.textContent = '(اختياري)';
+                supplierRequiredHint.style.color = '#6c757d';
+                supplierHelp.textContent = 'يمكنك ترك المورد فارغاً في الدفع النقدي';
+                supplierHelp.style.color = '#6c757d';
+            }
+        }
+
+        paymentType.addEventListener('change', updateSupplierRequirement);
+        updateSupplierRequirement();
+    });
+
+    // ============================================================
+    // إدارة الصفوف
+    // ============================================================
+    document.getElementById('addProductBtn').addEventListener('click', function() {
+        const container = document.getElementById('productsContainer');
+        const firstRow = container.querySelector('.product-row');
+        const newRow = firstRow.cloneNode(true);
+        
+        newRow.querySelector('.product-search').value = '';
+        newRow.querySelector('.product-id-input').value = '';
+        newRow.querySelector('.cost-input').value = '';
+        newRow.querySelector('input[name="quantity[]"]').value = 1;
+        newRow.querySelector('.search-results').innerHTML = '';
+        newRow.querySelector('.search-results').style.display = 'none';
+        
+        const removeBtn = newRow.querySelector('.remove-product-btn');
+        removeBtn.style.display = 'inline-block';
+        removeBtn.addEventListener('click', function() {
+            if (container.querySelectorAll('.product-row').length > 1) {
+                newRow.remove();
+            } else {
+                alert('لابد من وجود منتج واحد على الأقل.');
+            }
+        });
+        
+        container.appendChild(newRow);
+        enableSearchInRow(newRow);
+    });
+
+    // ============================================================
+    // حذف الصف الأول
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstRemoveBtn = document.querySelector('.remove-product-btn');
+        if (firstRemoveBtn) {
+            firstRemoveBtn.addEventListener('click', function() {
+                const container = document.getElementById('productsContainer');
+                if (container.querySelectorAll('.product-row').length > 1) {
+                    this.closest('.product-row').remove();
+                } else {
+                    alert('لابد من وجود منتج واحد على الأقل.');
+                }
+            });
+        }
+        const firstRow = document.querySelector('.product-row');
+        if (firstRow) enableSearchInRow(firstRow);
+    });
+
+    // ============================================================
+    // تفعيل البحث في صف معين
+    // ============================================================
+    function enableSearchInRow(row) {
+        const searchInput = row.querySelector('.product-search');
+        const hiddenInput = row.querySelector('.product-id-input');
+        const costInput = row.querySelector('.cost-input');
+        const resultsDiv = row.querySelector('.search-results');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            const row = this.closest('.product-row');
+            
+            if (query.length < 1) {
+                resultsDiv.style.display = 'none';
+                hiddenInput.value = '';
+                return;
+            }
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetch(`/purchases/search-products?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        resultsDiv.innerHTML = `
+                            <div class="result-item add-new" data-action="add-new">
+                                <span><i class="fas fa-plus-circle"></i> إضافة منتج جديد: <strong>${query}</strong></span>
+                                <span class="badge bg-success">جديد</span>
+                            </div>
+                        `;
+                        resultsDiv.style.display = 'block';
+                    } else {
+                        let html = '';
+                        data.forEach(p => {
+                            html += `
+                                <div class="result-item" data-id="${p.id}" data-cost="${p.cost_price}">
+                                    <span>${p.name}</span>
+                                    <span class="badge bg-secondary">${p.cost_price} ج.م</span>
+                                </div>
+                            `;
+                        });
+                        html += `
+                            <div class="result-item add-new" data-action="add-new">
+                                <span><i class="fas fa-plus-circle"></i> إضافة منتج جديد: <strong>${query}</strong></span>
+                                <span class="badge bg-success">جديد</span>
+                            </div>
+                        `;
+                        resultsDiv.innerHTML = html;
+                        resultsDiv.style.display = 'block';
+                    }
+
+                    resultsDiv.querySelectorAll('.result-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const row = this.closest('.product-row');
+                            const searchInput = row.querySelector('.product-search');
+                            const hiddenInput = row.querySelector('.product-id-input');
+                            const costInput = row.querySelector('.cost-input');
+
+                            if (this.dataset.action === 'add-new') {
+                                const productName = searchInput.value.trim();
+                                addNewProduct(productName, row);
+                            } else {
+                                const productId = this.dataset.id;
+                                const productCost = this.dataset.cost;
+                                const productName = this.querySelector('span').textContent.trim();
+                                searchInput.value = productName;
+                                hiddenInput.value = productId;
+                                if (productCost && !costInput.value) {
+                                    costInput.value = productCost;
+                                }
+                                resultsDiv.style.display = 'none';
+                            }
+                        });
+                    });
+                })
+                .catch(() => {
+                    resultsDiv.innerHTML = '<div class="result-item text-danger">خطأ في الاتصال بالخادم</div>';
+                    resultsDiv.style.display = 'block';
+                });
+            }, 300);
+        });
+
+        searchInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                resultsDiv.style.display = 'none';
+            }, 200);
+        });
+
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim().length >= 1) {
+                resultsDiv.style.display = 'block';
+            }
+        });
+    }
+
+    // ============================================================
+    // إضافة منتج جديد (Ajax)
+    // ============================================================
+    function addNewProduct(name, row) {
+        const searchInput = row.querySelector('.product-search');
+        const hiddenInput = row.querySelector('.product-id-input');
+        const costInput = row.querySelector('.cost-input');
+        const resultsDiv = row.querySelector('.search-results');
+
+        const costPrice = prompt(`أدخل سعر تكلفة المنتج "${name}":`, '0');
+        if (costPrice === null) return;
+
+        const sellingPrice = prompt(`أدخل سعر بيع المنتج "${name}" (مبدئي):`, '0');
+        if (sellingPrice === null) return;
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('category', 'Laptops');
+        formData.append('cost_price', costPrice || 0);
+        formData.append('selling_price', sellingPrice || 0);
+        formData.append('min_stock', 5);
+
+        fetch('/purchases/quick-add-product', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                searchInput.value = data.product.name;
+                hiddenInput.value = data.product.id;
+                if (data.product.cost_price) {
+                    costInput.value = data.product.cost_price;
+                }
+                resultsDiv.style.display = 'none';
+                alert('تم إضافة المنتج بنجاح!');
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        })
+        .catch(() => {
+            alert('حدث خطأ في الاتصال. تأكد من أن السيرفر يعمل.');
+        });
+    }
+
+    // ============================================================
+    // منع إرسال الفورم بدون اختيار منتج
+    // ============================================================
+    document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+        const hiddenInputs = document.querySelectorAll('.product-id-input');
+        let valid = true;
+        hiddenInputs.forEach(input => {
+            if (!input.value) {
+                valid = false;
+                const row = input.closest('.product-row');
+                const searchInput = row.querySelector('.product-search');
+                searchInput.classList.add('is-invalid');
+                setTimeout(() => searchInput.classList.remove('is-invalid'), 3000);
+            }
+        });
+        if (!valid) {
+            e.preventDefault();
+            alert('يرجى اختيار منتج صحيح لكل صف.');
+            return;
+        }
+
+        // ===== التحقق من المورد في حالة الدفع الآجل =====
+        const paymentType = document.getElementById('paymentType').value;
+        const supplierPhone = document.getElementById('supplierSelect').value;
+        if (paymentType === 'credit' && !supplierPhone) {
+            e.preventDefault();
+            alert('الدفع الآجل يتطلب اختيار المورد.');
+            document.getElementById('supplierSelect').focus();
+        }
+    });
+</script>
+{% endblock %}

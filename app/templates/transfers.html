@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}التحويلات المخزنية{% endblock %}
+{% block header %}إدارة التحويلات المخزنية{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap">
+        <span><i class="fas fa-exchange-alt"></i> قائمة التحويلات</span>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('transfers.add_transfer') }}" class="btn btn-light btn-sm">
+                <i class="fas fa-plus-circle"></i> تحويل جديد
+            </a>
+            <a href="{{ url_for('transfers.receive_incoming_transfer') }}" class="btn btn-warning btn-sm text-dark">
+                <i class="fas fa-arrow-down"></i> استلام تحويل وارد
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج</th>
+                        <th>من فرع</th>
+                        <th>إلى فرع</th>
+                        <th>الكمية</th>
+                        <th>التاريخ</th>
+                        <th>الحالة</th>
+                        <th>ملاحظات</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if transfers %}
+                        {% for transfer in transfers %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ transfer.product.name }}</td>
+                            <td>{{ transfer.from_branch.name if transfer.from_branch else 'غير محدد' }}</td>
+                            <td>{{ transfer.to_branch.name if transfer.to_branch else 'غير محدد' }}</td>
+                            <td>
+                                <span class="badge {% if transfer.quantity_change < 0 %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ transfer.quantity_change }}
+                                </span>
+                            </td>
+                            <td>{{ transfer.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if transfer.is_received %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> مستلم</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> في الانتظار</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ transfer.notes or '-' }}</td>
+                            <td>
+                                {% if not transfer.is_received and transfer.movement_type == 'TRANSFER' %}
+                                    {% if current_user.role == 'admin' or (transfer.to_branch_id == current_user.branch_id) %}
+                                    <form method="POST" action="{{ url_for('transfers.receive_transfer', transfer_id=transfer.id) }}" style="display:inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('تأكيد استلام هذا التحويل؟')">
+                                            <i class="fas fa-check"></i> استلام
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">لا توجد تحويلات مخزنية حتى الآن.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

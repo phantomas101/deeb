@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}الأرباح والخسائر{% endblock %}
+{% block header %}تقرير الأرباح والخسائر{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <i class="fas fa-chart-line"></i> تقرير الأرباح والخسائر
+    </div>
+    <div class="card-body">
+        <!-- اختيار الفترة -->
+        <form method="GET" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label">من تاريخ</label>
+                <input type="date" name="date_from" class="form-control" value="{{ start_date.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">إلى تاريخ</label>
+                <input type="date" name="date_to" class="form-control" value="{{ end_date.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i> عرض</button>
+            </div>
+        </form>
+
+        <!-- النتائج -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5>إجمالي المبيعات</h5>
+                        <h3 class="text-primary">{{ total_sales }} ج.م</h3>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6"><small>قطاعي: {{ retail_sales }} ج.م</small></div>
+                            <div class="col-6"><small>جملة: {{ wholesale_sales }} ج.م</small></div>
+                            <div class="col-6"><small>نقدي: {{ cash_sales }} ج.م</small></div>
+                            <div class="col-6"><small>آجل: {{ credit_sales }} ج.م</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5>تكلفة البضاعة المباعة</h5>
+                        <h3 class="text-warning">{{ cost_of_goods_sold }} ج.م</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5>إجمالي المشتريات</h5>
+                        <h3 class="text-info">{{ total_purchases }} ج.م</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5>إجمالي المصروفات</h5>
+                        <h3 class="text-danger">{{ total_expenses }} ج.م</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5>إجمالي الربح</h5>
+                        <h3 class="text-success">{{ gross_profit }} ج.م</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h5>صافي الربح (قبل الديون)</h5>
+                        <h2>{{ net_profit }} ج.م</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <h5>صافي الربح (بعد الديون)</h5>
+                        <h2>{{ net_profit_after_debts }} ج.م</h2>
+                        <small>مديونية العملاء: {{ customers_balance }} ج.م | مستحقات الموردين: {{ suppliers_balance }} ج.م</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> طباعة التقرير</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

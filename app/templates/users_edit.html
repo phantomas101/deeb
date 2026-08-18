@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}تعديل مستخدم{% endblock %}
+{% block header %}تعديل بيانات المستخدم: {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <i class="fas fa-user-cog"></i> تعديل بيانات المستخدم
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('users.edit_user', user_id=user.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">اسم المستخدم <span class="text-danger">*</span></label>
+                        <input type="text" name="username" class="form-control" value="{{ user.username }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">كلمة المرور الجديدة</label>
+                        <input type="password" name="password" class="form-control" placeholder="اتركها فارغة إذا لم تريد تغييرها">
+                        <small class="text-muted">اتركها فارغة للإبقاء على كلمة المرور الحالية.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الصلاحية</label>
+                        <select name="role" class="form-select">
+                            <option value="cashier" {% if user.role == 'cashier' %}selected{% endif %}>كاشير</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>أدمن</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الفرع التابع</label>
+                        <select name="branch_id" class="form-select">
+                            <option value="">-- بدون فرع --</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.id }}" {% if branch.id == user.branch_id %}selected{% endif %}>{{ branch.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('users.index') }}" class="btn btn-secondary">إلغاء</a>
+                        <button type="submit" class="btn btn-primary">تحديث البيانات</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

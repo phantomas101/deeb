@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة تحويل جديد{% endblock %}
+{% block header %}تحويل مخزني جديد{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <i class="fas fa-exchange-alt"></i> نقل البضاعة بين الفروع
+    </div>
+    <div class="card-body">
+        <form method="POST" id="transferForm">
+            <!-- اختيار المصدر والوجهة -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">الفرع المصدر <span class="text-danger">*</span></label>
+                    <select name="from_branch_id" id="fromBranch" class="form-select" required>
+                        <option value="">-- اختر الفرع المصدر --</option>
+                        {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">الفرع الوجهة <span class="text-danger">*</span></label>
+                    <select name="to_branch_id" id="toBranch" class="form-select" required>
+                        <option value="">-- اختر الفرع الوجهة --</option>
+                        {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- قائمة المنتجات -->
+            <hr>
+            <h5><i class="fas fa-boxes"></i> المنتجات المراد تحويلها</h5>
+            <div id="productsContainer">
+                <div class="row product-row g-2 mb-2">
+                    <div class="col-md-7">
+                        <label class="form-label">المنتج <span class="text-danger">*</span></label>
+                        <select name="product_id[]" class="form-select product-select" required>
+                            <option value="">-- اختر منتج --</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}" data-branch="{{ product.branch_id }}" data-max="{{ product.quantity }}">
+                                {{ product.name }} ({{ product.branch.name }} - متوفر: {{ product.quantity }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">الكمية</label>
+                        <input type="number" name="quantity[]" class="form-control qty-input" min="1" value="1" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger remove-product-btn"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="addProductBtn" class="btn btn-outline-primary btn-sm mt-2">
+                <i class="fas fa-plus"></i> إضافة منتج آخر
+            </button>
+
+            <hr>
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('transfers.index') }}" class="btn btn-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-success btn-lg">تنفيذ التحويل</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // تحديث قائمة المنتجات عند تغيير الفرع المصدر
+    document.getElementById('fromBranch').addEventListener('change', function() {
+        const branchId = this.value;
+        const productSelects = document.querySelectorAll('.product-select');
+        productSelects.forEach(select => {
+            // إخفاء المنتجات التي لا تنتمي للفرع المختار
+            Array.from(select.options).forEach(opt => {
+                if (opt.value === '') return;
+                const optBranch = opt.dataset.branch;
+                opt.style.display = (optBranch == branchId) ? '' : 'none';
+            });
+            // إعادة تعيين الاختيار إلى القيمة الفارغة
+            select.value = '';
+        });
+    });
+
+    // إدارة إضافة صفوف جديدة
+    document.getElementById('addProductBtn').addEventListener('click', function() {
+        const container = document.getElementById('productsContainer');
+        const firstRow = container.querySelector('.product-row');
+        const newRow = firstRow.cloneNode(true);
+        newRow.querySelector('.product-select').value = '';
+        newRow.querySelector('.qty-input').value = 1;
+        newRow.querySelector('.remove-product-btn').style.display = 'inline-block';
+        newRow.querySelector('.remove-product-btn').addEventListener('click', function() {
+            if (container.querySelectorAll('.product-row').length > 1) {
+                newRow.remove();
+            } else {
+                alert('لابد من وجود منتج واحد على الأقل.');
+            }
+        });
+        container.appendChild(newRow);
+
+        // تطبيق الفلتر على الصف الجديد
+        const branchId = document.getElementById('fromBranch').value;
+        if (branchId) {
+            const select = newRow.querySelector('.product-select');
+            Array.from(select.options).forEach(opt => {
+                if (opt.value === '') return;
+                opt.style.display = (opt.dataset.branch == branchId) ? '' : 'none';
+            });
+        }
+    });
+
+    // عند تغيير المنتج، تحديث الحد الأقصى للكمية
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('product-select')) {
+            const selected = e.target.options[e.target.selectedIndex];
+            const maxQty = selected.dataset.max || 0;
+            const row = e.target.closest('.product-row');
+            const qtyInput = row.querySelector('.qty-input');
+            qtyInput.max = maxQty;
+            if (parseInt(qtyInput.value) > maxQty) {
+                qtyInput.value = maxQty;
+            }
+        }
+    });
+
+    // التأكد من أن الكمية لا تتجاوز الحد الأقصى
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('qty-input')) {
+            const max = parseInt(e.target.max) || 0;
+            if (parseInt(e.target.value) > max) {
+                e.target.value = max;
+            }
+        }
+    });
+</script>
+{% endblock %}

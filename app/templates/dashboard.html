@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}الرئيسية{% endblock %}
+{% block header %}لوحة القيادة - نظرة عامة{% endblock %}
+
+{% block content %}
+<!-- بطاقات الإحصائيات السريعة -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-dollar-sign"></i></div>
+        <div class="stat-details">
+            <span class="stat-label">إجمالي المبيعات اليوم</span>
+            <span class="stat-value">ج.م {{ total_sales | round(2) }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
+        <div class="stat-details">
+            <span class="stat-label">رصيد الخزينة</span>
+            <span class="stat-value">ج.م {{ cash_balance | round(2) }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-details">
+            <span class="stat-label">أصناف منخفضة المخزون</span>
+            <span class="stat-value">{{ low_stock_items | length }} أصناف</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon yellow"><i class="fas fa-receipt"></i></div>
+        <div class="stat-details">
+            <span class="stat-label">إجمالي المصروفات (اليوم)</span>
+            <span class="stat-value">ج.م {{ total_expenses | round(2) }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- آخر المبيعات والتنبيهات -->
+<div class="content-grid">
+    <div class="card">
+        <h3><i class="fas fa-clock"></i> أحدث المبيعات</h3>
+        <table class="table-mini">
+            <thead>
+                <tr><th>الفاتورة</th><th>طريقة الدفع</th><th>المبلغ</th><th>الحالة</th></tr>
+            </thead>
+            <tbody>
+                {% if recent_sales %}
+                    {% for sale in recent_sales %}
+                    <tr>
+                        <td>#{{ sale.invoice_number }}</td>
+                        <td>{{ 'نقدي' if sale.payment_type == 'cash' else 'آجل' }}</td>
+                        <td>ج.م {{ sale.net_amount | round(2) }}</td>
+                        <td><span class="badge success">مكتملة</span></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">لا توجد مبيعات مسجلة</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3><i class="fas fa-bell"></i> تنبيهات المخزون</h3>
+        <ul class="alert-list">
+            {% if low_stock_items %}
+                {% for product in low_stock_items %}
+                <li><i class="fas fa-circle text-danger"></i> {{ product.name }} - متبقي {{ product.quantity }} وحدة فقط</li>
+                {% endfor %}
+            {% else %}
+                <li>جميع الأصناف بكميات كافية 👍</li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+<button class="btn btn-primary" id="testModalBtn">📱 اختبار المودال</button>
+
+<div class="modal fade" id="testModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">✅ اختبار ناجح</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>إذا ظهرت هذه النافذة، فهذا يعني أن Bootstrap يعمل بشكل صحيح!</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('testModalBtn').addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('testModal'));
+        modal.show();
+    });
+</script>

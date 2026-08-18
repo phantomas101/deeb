@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المخزون{% endblock %}
+{% block header %}إدارة المخزون - الأصناف والكميات{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-boxes"></i> قائمة الأصناف</span>
+        <a href="{{ url_for('inventory.add_product_page') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-plus-circle"></i> إضافة صنف جديد
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الصورة</th>
+                        <th>اسم المنتج</th>
+                        <th>الكود</th>
+                        <th>الفئة</th>
+                        <th>الكمية</th>
+                        <th>سعر البيع</th>
+                        {% if show_cost %}
+                        <th>سعر التكلفة</th>
+                        <th>الربح المتوقع</th>
+                        {% endif %}
+                        <th>الحد الأدنى</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if products %}
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                {% if product.image_filename %}
+                                    <img src="{{ url_for('inventory.product_image', filename=product.image_filename) }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ product.name }}</strong></td>
+                            <td><code>{{ product.code or '-' }}</code></td>
+                            <td><span class="badge bg-secondary">{{ product.category }}</span></td>
+                            <td>
+                                <span class="badge {% if product.quantity <= product.min_stock %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ product.quantity }}
+                                </span>
+                            </td>
+                            <td>{{ product.selling_price }} ج.م</td>
+                            {% if show_cost %}
+                            <td>{{ product.cost_price }} ج.م</td>
+                            <td>{{ (product.selling_price - product.cost_price) | round(2) }} ج.م</td>
+                            {% endif %}
+                            <td>{{ product.min_stock }}</td>
+                            <td>
+                                <a href="{{ url_for('inventory.edit_product', product_id=product.id) }}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit"></i> تعديل
+                                </a>
+                                <button class="btn btn-danger btn-sm delete-btn" data-id="{{ product.id }}" data-name="{{ product.name }}">
+                                    <i class="fas fa-trash-alt"></i> حذف
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">لا توجد أصناف في المخزون. أضف صنفك الأول!</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteBtns = document.querySelectorAll('.delete-btn');
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.dataset.id;
+                const productName = this.dataset.name;
+                if (confirm(`هل أنت متأكد من حذف المنتج "${productName}"؟`)) {
+                    fetch(`/inventory/delete/${productId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('تم الحذف بنجاح!');
+                            location.reload();
+                        } else {
+                            alert('خطأ: ' + data.message);
+                        }
+                    })
+                    .catch(() => alert('حدث خطأ في الاتصال.'));
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

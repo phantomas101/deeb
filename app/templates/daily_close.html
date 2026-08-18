@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}تقفيل اليومية{% endblock %}
+{% block header %}تقرير تقفيل اليومية - {{ today_start.strftime('%Y-%m-%d') }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-chart-line"></i> ملخص اليوم المالي
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded">
+                            <h6>إجمالي المبيعات</h6>
+                            <h3 class="text-primary">{{ total_sales }} ج.م</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded">
+                            <h6>تكلفة البضاعة المباعة</h6>
+                            <h3 class="text-warning">{{ cost_of_goods_sold }} ج.م</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded">
+                            <h6>إجمالي المصروفات</h6>
+                            <h3 class="text-danger">{{ total_expenses }} ج.م</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded">
+                            <h6>صافي الربح</h6>
+                            <h3 class="text-success">{{ net_profit }} ج.م</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>تفاصيل الخزينة</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>إجمالي الإيداعات (مبيعات + إيداعات)</span>
+                                <span class="badge bg-success">{{ cash_in }} ج.م</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>إجمالي السحوبات (مصروفات + سحوبات)</span>
+                                <span class="badge bg-danger">{{ cash_out }} ج.م</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <strong>صافي الخزينة اليوم</strong>
+                                <strong class="text-primary">{{ net_cash }} ج.م</strong>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>مؤشرات الأداء</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>إجمالي الربح (الإجمالي)</span>
+                                <span class="badge bg-info">{{ gross_profit }} ج.م</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>نسبة الربح للمبيعات</span>
+                                <span class="badge bg-secondary">
+                                    {% if total_sales > 0 %}{{ ((gross_profit / total_sales) * 100) | round(2) }}%{% else %}0%{% endif %}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> طباعة التقرير</button>
+                    <a href="{{ url_for('cash.index') }}" class="btn btn-secondary">العودة للخزينة</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

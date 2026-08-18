@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة مستخدم جديد{% endblock %}
+{% block header %}إضافة مستخدم جديد{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-user-plus"></i> بيانات المستخدم الجديد
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('users.add_user') }}">
+                    <div class="mb-3">
+                        <label class="form-label">اسم المستخدم <span class="text-danger">*</span></label>
+                        <input type="text" name="username" class="form-control" placeholder="مثال: cashier1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">كلمة المرور <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control" placeholder="أدخل كلمة المرور" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الصلاحية</label>
+                        <select name="role" class="form-select">
+                            <option value="cashier">كاشير</option>
+                            <option value="admin">أدمن</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الفرع التابع</label>
+                        <select name="branch_id" class="form-select">
+                            <option value="">-- بدون فرع --</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.id }}">{{ branch.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('users.index') }}" class="btn btn-secondary">إلغاء</a>
+                        <button type="submit" class="btn btn-success">حفظ المستخدم</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

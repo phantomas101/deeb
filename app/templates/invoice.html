@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فاتورة - {{ sale.invoice_number }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== الطباعة الحرارية (الافتراضية) ===== */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+            .invoice-container { 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                padding: 12px !important; 
+                max-width: 100% !important;
+                border-radius: 0 !important;
+            }
+            .print-a4-btn { display: none !important; }
+        }
+
+        /* ===== طباعة A4 ===== */
+        @media print and (min-width: 500px) {
+            /* سيتم تفعيلها عبر JavaScript عند اختيار طباعة A4 */
+        }
+        .print-a4 {
+            /* هذه الفئة تُستخدم عند طباعة A4 */
+        }
+        .print-a4 .invoice-container {
+            max-width: 210mm !important;
+            padding: 20mm !important;
+            margin: auto !important;
+            font-size: 14px !important;
+        }
+        .print-a4 .invoice-items table {
+            font-size: 14px !important;
+        }
+        .print-a4 .invoice-totals .net {
+            font-size: 24px !important;
+        }
+
+        /* ===== التصميم العام ===== */
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f0f4f8;
+            padding: 20px;
+        }
+        .invoice-container {
+            max-width: 380px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .invoice-header {
+            text-align: center;
+            border-bottom: 2px dashed #0f172a;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+        .invoice-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+        .invoice-header .sub {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .invoice-details {
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .invoice-details table {
+            width: 100%;
+        }
+        .invoice-details td {
+            padding: 2px 0;
+        }
+        .invoice-details td:last-child {
+            text-align: left;
+        }
+        .invoice-items table {
+            width: 100%;
+            font-size: 13px;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .invoice-items th {
+            background: #f8fafc;
+            padding: 6px 4px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 12px;
+            text-align: center;
+        }
+        .invoice-items td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+        }
+        .invoice-items .text-muted {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+        .invoice-totals {
+            margin-top: 10px;
+            border-top: 2px dashed #0f172a;
+            padding-top: 10px;
+        }
+        .invoice-totals .row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            padding: 2px 0;
+        }
+        .invoice-totals .net {
+            font-size: 20px;
+            font-weight: 800;
+            color: #059669;
+        }
+        .invoice-footer {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 15px;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 10px;
+        }
+        .text-center { text-align: center; }
+        .fw-bold { font-weight: 700; }
+        .text-muted { color: #64748b; }
+        .btn-group-custom {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .btn-group-custom .btn {
+            min-width: 120px;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container" id="invoiceContainer">
+        <div class="invoice-header">
+            <h2>{{ settings.get('site_name', 'نظام POS') }}</h2>
+            <div class="sub">
+                {% if settings.get('phone') %}{{ settings.get('phone') }}<br>{% endif %}
+                {% if settings.get('address') %}{{ settings.get('address') }}{% endif %}
+            </div>
+        </div>
+
+        <div class="invoice-details">
+            <table>
+                <tr>
+                    <td><strong>رقم الفاتورة:</strong></td>
+                    <td>{{ sale.invoice_number }}</td>
+                </tr>
+                <tr>
+                    <td><strong>التاريخ:</strong></td>
+                    <td>{{ sale.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% if sale.customer %}
+                <tr>
+                    <td><strong>العميل:</strong></td>
+                    <td>{{ sale.customer.name }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td><strong>طريقة الدفع:</strong></td>
+                    <td>{{ 'نقدي' if sale.payment_type == 'cash' else 'آجل' }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="invoice-items">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج</th>
+                        {% if items|selectattr('product.code')|list %}
+                            <th>الكود</th>
+                        {% endif %}
+                        <th>الكمية</th>
+                        <th>السعر</th>
+                        <th>الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ item.product.name }}</td>
+                        {% if items|selectattr('product.code')|list %}
+                            <td class="text-muted">{{ item.product.code or '-' }}</td>
+                        {% endif %}
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.unit_price }} ج.م</td>
+                        <td>{{ item.total }} ج.م</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="invoice-totals">
+            <div class="row"><span>الإجمالي</span><span>{{ sale.total_amount }} ج.م</span></div>
+            <div class="row"><span>الخصم</span><span>{{ sale.discount }} ج.م</span></div>
+            <div class="row net"><span>الصافي</span><span>{{ sale.net_amount }} ج.م</span></div>
+            <div class="row"><span>المدفوع</span><span>{{ sale.paid_amount }} ج.م</span></div>
+            <div class="row"><span>الباقي</span><span>{{ sale.change_amount }} ج.م</span></div>
+        </div>
+
+        <div class="invoice-footer">
+            {{ settings.get('site_name', 'نظام POS') }}<br>
+            شكراً لتسوقكم معنا
+        </div>
+    </div>
+
+    <!-- ===== الأزرار (تظهر فقط على الشاشة) ===== -->
+    <div class="text-center no-print btn-group-custom">
+        <button class="btn btn-primary" onclick="printInvoice('thermal')">
+            <i class="fas fa-print"></i> طباعة (حراري)
+        </button>
+        <button class="btn btn-secondary" onclick="printInvoice('a4')">
+            <i class="fas fa-file-pdf"></i> طباعة (A4)
+        </button>
+        <a href="{{ url_for('pos.index') }}" class="btn btn-success">
+            <i class="fas fa-arrow-left"></i> العودة
+        </a>
+    </div>
+
+    <script>
+        function printInvoice(type) {
+            const container = document.getElementById('invoiceContainer');
+            
+            if (type === 'a4') {
+                // إضافة كلاس A4 للطباعة
+                container.classList.add('print-a4');
+                // طباعة مع إعدادات A4
+                window.print();
+                // إزالة الكلاس بعد الطباعة
+                setTimeout(() => {
+                    container.classList.remove('print-a4');
+                }, 1000);
+            } else {
+                // الطباعة الحرارية (بدون كلاس A4)
+                window.print();
+            }
+        }
+    </script>
+</body>
+</html>

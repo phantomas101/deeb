@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}الإعدادات{% endblock %}
+{% block header %}الإعدادات العامة{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <i class="fas fa-cog"></i> إعدادات النظام
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs" id="settingsTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button">
+                    <i class="fas fa-info-circle"></i> البيانات الأساسية
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance" type="button">
+                    <i class="fas fa-palette"></i> المظهر
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="tools-tab" data-bs-toggle="tab" data-bs-target="#tools" type="button">
+                    <i class="fas fa-tools"></i> الأدوات
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="about-tab" data-bs-toggle="tab" data-bs-target="#about" type="button">
+                    <i class="fas fa-info-circle"></i> حول
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3" id="settingsTabContent">
+            <!-- ===== تبويب البيانات الأساسية ===== -->
+            <div class="tab-pane fade show active" id="general" role="tabpanel">
+                <form method="POST" action="{{ url_for('settings.update') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">اسم المنشأة <span class="text-danger">*</span></label>
+                            <input type="text" name="site_name" class="form-control" value="{{ settings.get('site_name', 'نظام POS المتكامل') }}" required>
+                            <small class="text-muted">سيظهر في عنوان المتصفح، الشريط العلوي، القائمة الجانبية، وتذييل الفاتورة.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رقم الهاتف</label>
+                            <input type="text" name="phone" class="form-control" value="{{ settings.get('phone', '') }}">
+                            <small class="text-muted">سيظهر في تذييل الفاتورة المطبوعة.</small>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">العنوان</label>
+                            <input type="text" name="address" class="form-control" value="{{ settings.get('address', '') }}">
+                            <small class="text-muted">سيظهر في تذييل الفاتورة المطبوعة.</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">حفظ البيانات</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ===== تبويب المظهر ===== -->
+            <div class="tab-pane fade" id="appearance" role="tabpanel">
+                <form method="POST" action="{{ url_for('settings.update') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="site_name" value="{{ settings.get('site_name', 'نظام POS المتكامل') }}">
+                    <input type="hidden" name="phone" value="{{ settings.get('phone', '') }}">
+                    <input type="hidden" name="address" value="{{ settings.get('address', '') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">اللون الأساسي</label>
+                            <input type="color" name="primary_color" class="form-control form-control-color" value="{{ settings.get('primary_color', '#0f172a') }}">
+                            <small class="text-muted">لون القائمة الجانبية (Sidebar).</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">اللون الثانوي</label>
+                            <input type="color" name="secondary_color" class="form-control form-control-color" value="{{ settings.get('secondary_color', '#fbbf24') }}">
+                            <small class="text-muted">لون الأزرار والعناصر المميزة.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الخط</label>
+                            <select name="font_family" class="form-select">
+                                <option value="Cairo" {% if settings.get('font_family') == 'Cairo' %}selected{% endif %}>Cairo (عصري)</option>
+                                <option value="Tajawal" {% if settings.get('font_family') == 'Tajawal' %}selected{% endif %}>Tajawal (واضح)</option>
+                                <option value="Noto Kufi Arabic" {% if settings.get('font_family') == 'Noto Kufi Arabic' %}selected{% endif %}>Noto Kufi Arabic (كلاسيكي)</option>
+                                <option value="Almarai" {% if settings.get('font_family') == 'Almarai' %}selected{% endif %}>Almarai (ناعم)</option>
+                            </select>
+                            <small class="text-muted">سيتم تطبيقه على جميع العناصر في البرنامج.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رفع شعار (Logo)</label>
+                            <input type="file" name="logo" class="form-control" accept="image/*">
+                            <small class="text-muted">سيظهر بجانب اسم المنشأة في القائمة الجانبية.</small>
+                            {% if settings.get('logo_path') %}
+                                <div class="mt-2">
+                                    <img src="{{ url_for('static', filename=settings.get('logo_path')) }}" style="max-height: 60px; border-radius: 8px; border: 1px solid #ddd; padding: 5px;">
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">رفع خلفية (صورة)</label>
+                            <input type="file" name="background" class="form-control" accept="image/*">
+                            <small class="text-muted">الصورة ستكون خلفية خفيفة شفافة في كل الصفحات.</small>
+                            {% if settings.get('background_path') %}
+                                <div class="mt-2">
+                                    <img src="{{ url_for('static', filename=settings.get('background_path')) }}" style="max-height: 150px; max-width: 100%; border-radius: 8px; border: 1px solid #ddd; padding: 5px;">
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">حفظ المظهر</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ===== تبويب الأدوات ===== -->
+            <div class="tab-pane fade" id="tools" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-download fa-3x text-primary"></i>
+                                <h5 class="mt-2">تحميل نسخة احتياطية</h5>
+                                <p class="text-muted small">تصدير قاعدة البيانات وجميع المرفوعات في ملف ZIP.</p>
+                                <button class="btn btn-primary" id="backupBtn">تحميل</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-upload fa-3x text-success"></i>
+                                <h5 class="mt-2">استعادة نسخة احتياطية</h5>
+                                <p class="text-muted small">رفع ملف ZIP لاستعادة البيانات (استبدال كامل).</p>
+                                <input type="file" id="restoreFileInput" accept=".zip" style="display: none;">
+                                <button class="btn btn-success" id="restoreBtn">استعادة</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <i class="fas fa-database fa-3x"></i>
+                                <h5 class="mt-2">إضافة بيانات تجريبية</h5>
+                                <p class="small">إضافة أصناف وموردين وفروع ومستخدمين تجريبيين (لن تحذف بياناتك الحالية).</p>
+                                <button class="btn btn-warning" id="demoDataBtn">إضافة بيانات تجريبية</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== تبويب حول ===== -->
+            <div class="tab-pane fade" id="about" role="tabpanel">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h4><i class="fas fa-store"></i> {{ settings.get('site_name', 'نظام POS المتكامل') }}</h4>
+                        <p class="text-muted">الإصدار: 2.0</p>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>حالة التفعيل</h5>
+                                {% if license_status %}
+                                    <span class="badge bg-success" style="font-size: 18px; padding: 8px 20px;">
+                                        <i class="fas fa-check-circle"></i> مفعل
+                                    </span>
+                                    {% if license_info %}
+                                        {% if license_info.license_type == 'trial' %}
+                                            <p class="mt-2">
+                                                ينتهي في: 
+                                                <strong>
+                                                    {% if license_info.expires_at %}
+                                                        {{ license_info.expires_at.strftime('%Y-%m-%d') }}
+                                                    {% else %}
+                                                        غير محدد
+                                                    {% endif %}
+                                                </strong>
+                                            </p>
+                                            <p class="text-muted">نوع التفعيل: <strong>تجريبي</strong></p>
+                                        {% elif license_info.license_type == 'permanent' %}
+                                            <p class="mt-2 text-success"><i class="fas fa-infinity"></i> دائم (غير محدود)</p>
+                                        {% endif %}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-danger" style="font-size: 18px; padding: 8px 20px;">
+                                        <i class="fas fa-times-circle"></i> غير مفعل
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h5>معلومات البرنامج</h5>
+                                <p><strong>المطور:</strong> <a href="#" target="_blank">اسم المطور</a></p>
+                                <p><strong>البريد الإلكتروني:</strong> <a href="mailto:info@example.com">info@example.com</a></p>
+                                <p><strong>الموقع:</strong> <a href="#" target="_blank">www.example.com</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('backupBtn').addEventListener('click', function() {
+        window.location.href = '/settings/backup';
+    });
+
+    const restoreBtn = document.getElementById('restoreBtn');
+    const restoreInput = document.getElementById('restoreFileInput');
+
+    restoreBtn.addEventListener('click', function() {
+        restoreInput.click();
+    });
+
+    restoreInput.addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            if (!file.name.endsWith('.zip')) {
+                alert('يرجى اختيار ملف ZIP صالح.');
+                this.value = '';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('backup_file', file);
+
+            if (confirm('سيتم استبدال جميع البيانات الحالية بالبيانات الموجودة في ملف النسخة الاحتياطية. هل أنت متأكد؟')) {
+                fetch('/settings/restore', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('تمت الاستعادة بنجاح! سيتم إعادة تحميل الصفحة.');
+                        location.reload();
+                    } else {
+                        alert('خطأ: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('حدث خطأ في الاتصال.');
+                });
+            }
+            this.value = '';
+        }
+    });
+
+    document.getElementById('demoDataBtn').addEventListener('click', function() {
+        if (confirm('سيتم إضافة بيانات تجريبية (أصناف، موردين، فروع، حركات شراء وبيع) دون حذف بياناتك الحالية. هل تريد المتابعة؟')) {
+            fetch('/settings/add-demo-data', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('تم إضافة البيانات التجريبية بنجاح!');
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('حدث خطأ في الاتصال.');
+            });
+        }
+    });
+</script>
+{% endblock %}

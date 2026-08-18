@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}تفاصيل فاتورة الشراء - {{ purchase.invoice_number }}{% endblock %}
+{% block header %}تفاصيل فاتورة الشراء: {{ purchase.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <i class="fas fa-file-invoice"></i> معلومات الفاتورة
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>رقم الفاتورة:</strong> {{ purchase.invoice_number }}</p>
+                <p><strong>التاريخ:</strong> {{ purchase.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>المورد:</strong> 
+                    {% if supplier %}
+                        {{ supplier.name }}
+                    {% else %}
+                        <span class="text-danger">المورد غير محدد (ربما تم حذفه)</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-6 text-end">
+                <h4><strong>إجمالي الفاتورة:</strong> {{ purchase.total_cost }} ج.م</h4>
+            </div>
+        </div>
+
+        <hr>
+        <h5><i class="fas fa-boxes"></i> الأصناف المشتراة</h5>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج</th>
+                        <th>الكمية</th>
+                        <th>سعر التكلفة</th>
+                        <th>الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if items %}
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                {% if item.product %}
+                                    {{ item.product.name }}
+                                {% else %}
+                                    <span class="text-danger">منتج محذوف (ID: {{ item.product_id }})</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.cost_price }} ج.م</td>
+                            <td>{{ item.total }} ج.م</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="5" class="text-muted">لا توجد أصناف</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+            <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> العودة للقائمة</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

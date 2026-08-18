@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}استلام تحويل وارد{% endblock %}
+{% block header %}<i class="fas fa-arrow-down text-warning"></i> استلام تحويل وارد{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-hand-holding"></i> إدخال بيانات التحويل الوارد
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">الفرع المرسل <span class="text-danger">*</span></label>
+                        <select name="from_branch_id" class="form-select" required>
+                            <option value="">-- اختر الفرع --</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.id }}">{{ branch.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">اختر الفرع الذي أرسل لك هذه البضاعة.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">اسم المنتج <span class="text-danger">*</span></label>
+                        <input type="text" name="product_name" class="form-control" placeholder="مثال: Dell Latitude 7490" required>
+                        <small class="text-muted">أدخل اسم المنتج كما هو في النظام.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">الكمية <span class="text-danger">*</span></label>
+                        <input type="number" name="quantity" class="form-control" placeholder="مثال: 5" min="1" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات (اختياري)</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="أي تفاصيل إضافية عن هذا التحويل..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('transfers.index') }}" class="btn btn-secondary">إلغاء</a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-check-circle"></i> تأكيد الاستلام
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
